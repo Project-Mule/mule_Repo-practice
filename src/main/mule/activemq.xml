@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<jms:config name="JMS_Config" doc:name="JMS Config" doc:id="43ad33ba-4b4c-487a-8717-23df6a3b2ba7" >
+		<jms:active-mq-connection username="admin" password="admin" >
+			<jms:factory-configuration brokerUrl="tcp://localhost:61616" />
+		</jms:active-mq-connection>
+	</jms:config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="228c54e9-129d-423e-bc41-feffaf5f2e70" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="activemqFlow" doc:id="8441201e-0d91-414b-b90f-e22900c12de3" >
+		<http:listener doc:name="Listener" doc:id="aaf6cd9f-5752-4440-87d7-11736aaf931f" config-ref="HTTP_Listener_config" path="/activemq"/>
+		<jms:publish doc:name="Publish" doc:id="aa09fcba-c8ba-4793-8b4a-890965c5e1da" config-ref="JMS_Config" destination="Q200"/>
+		<ee:transform doc:name="Transform Message" doc:id="24e7c3b9-fc71-4508-b478-3697ca44332e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+msg: "The incoming msg has been sent to activemq: Q200"]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="activemqFlow1" doc:id="e65ddc20-1d8f-4a49-9c29-e5043d0f8df1" >
+		<http:listener doc:name="Listener" doc:id="cd1f0d8f-c0f7-4b30-ac66-605078515e6b" config-ref="HTTP_Listener_config" path="/consume"/>
+		<jms:consume doc:name="Consume" doc:id="b9314670-a242-4c6a-9db5-2cc15ab9c6b1" config-ref="JMS_Config" destination="Q200"/>
+		<ee:transform doc:name="Transform Message" doc:id="5cccbccc-f6c3-4d77-b466-59b187bb0390" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+customer:
+{
+	cust:payload
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
